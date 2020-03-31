@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
+	"time"
 
-	"yuankunluo/greet/greetpb"
+	pb "yuankunluo/greet/greetpb"
 
 	"google.golang.org/grpc"
 )
@@ -14,14 +16,29 @@ import (
 type server struct {
 }
 
-func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
+func (s *server) Greet(ctx context.Context, req *pb.GreetRequest) (*pb.GreetResponse, error) {
 	fmt.Printf("Greet func was invoked with %v\n", req)
 	firstName := req.GetGreeting().GetFirstName()
 	result := "Hello " + firstName
-	response := greetpb.GreetResponse{
+	response := pb.GreetResponse{
 		Result: result,
 	}
 	return &response, nil
+}
+
+func (s *server) GreetManyTimes(req *pb.GreetManyTimesRequest, stream pb.GreetService_GreetManyTimesServer) error {
+	fmt.Printf("GreetManyTimes func was invoked with %v\n", req)
+	firstName := req.GetGreeting().GetFirstName()
+	lastName := req.GetGreeting().GetLastName()
+	for i := 0; i < 10; i++ {
+		result := "Hello " + firstName + " " + lastName + " number " + strconv.Itoa(i)
+		res := &pb.GreetManyTimesResponse{
+			Result: result,
+		}
+		stream.Send(res)
+		time.Sleep(1000 * time.Millisecond)
+	}
+	return nil
 }
 
 func main() {
@@ -34,7 +51,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 	// Register Service Server.
-	greetpb.RegisterGreetServiceServer(s, &server{})
+	pb.RegisterGreetServiceServer(s, &server{})
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v\n", err)

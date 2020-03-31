@@ -23,6 +23,24 @@ func (s *server) Sum(context context.Context, req *pb.SumRequest) (*pb.SumRespon
 	}, nil
 }
 
+func (s *server) PrimeNumberDecomposition(req *pb.PrimeNumberDecompositionRequest, stream pb.CalculatorService_PrimeNumberDecompositionServer) error {
+	fmt.Printf("Received PrimeNumberDecomposition RPC: %v\n", req)
+	number := req.GetNumber()
+	divisor := int64(2)
+	for number > 1 {
+		if number%divisor == 0 {
+			stream.Send(&pb.PrimeNumberDecompositionResponse{
+				PrimeFactor: divisor,
+			})
+			number = number / divisor
+		} else {
+			divisor++
+			fmt.Printf("Divisor has increased to %v", divisor)
+		}
+	}
+	return nil
+}
+
 func main() {
 
 	fmt.Println("Calculator Server")
