@@ -72,12 +72,10 @@ func (s *server) GreetEveryone(stream pb.GreetService_GreetEveryoneServer) error
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			fmt.Printf(("Receiving the EOF\n")
-			return nil
+			fmt.Printf("Receiving the EOF\n")
 		}
 		if err != nil {
 			log.Fatalf("Error while reading client stream: %v\n", err)
-			return err
 		}
 		firstName := req.GetGreeting().GetFirstName()
 		lastName := req.GetGreeting().GetLastName()

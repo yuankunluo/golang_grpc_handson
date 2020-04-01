@@ -173,14 +173,18 @@ func doBiDiStreaming(c pb.GreetServiceClient) {
 	// receive a bunch of messages from the server (go routine).
 	go func() {
 		// function to receive response
-		res, err := stream.Recv()
-		if err == io.EOF {
-			close(waitC)
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Error while receiving from server: %v\n", err)
+				break
+			}
+			fmt.Printf("Receiving %v", res.GetResult())
 		}
-		if err != nil {
-			log.Fatalf("Error while receiving from server: %v\n", err)
-		}
-		fmt.Printf("Receiving %v", res.GetResult())
+		close(waitC)
 	}()
 	// block until everyting is done.
 	<-waitC
