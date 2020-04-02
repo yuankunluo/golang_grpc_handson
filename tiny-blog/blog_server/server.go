@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -62,6 +63,25 @@ func (*server) CreateBlog(ctx context.Context, req *pb.CreateBlogRequest) (*pb.C
 		},
 	}, nil
 
+}
+
+// TODO
+func (*server) ReadBlog(ctx context.Context, req *pb.ReadBlogRequest) (*pb.ReadBlogResponse, error) {
+	fmt.Println("ReadBlog request")
+	blogID := req.GetBlogId()
+	// Covert string id into ObjectId.
+	oid, err := primitive.ObjectIDFromHex(blogID)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Can not parse ID: %v\n", blogId)
+		)
+	}
+	// create an empty struct to query.
+	data := &blogItem{}
+	filter := bson.New
+
+	return nil, nil
 }
 
 func main() {
