@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/signal"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -25,7 +28,40 @@ type blogItem struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	AuthorID string             `bson:"authod_id"`
 	Content  string             `bson:"content"`
-	Title    string             `bson:"title`
+	Title    string             `bson:"title"`
+}
+
+func (*server) CreateBlog(ctx context.Context, req *pb.CreateBlogRequest) (*pb.CreateBlogResponse, error) {
+	blog := req.GetBlog()
+	newBlogItem := blogItem{
+		AuthorID: blog.GetAuthorId(),
+		Content:  blog.GetContent(),
+		Title:    blog.GetTitle(),
+	}
+
+	insertRes, err := collection.InsertOne(context.Background(), newBlogItem)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Internal error: %v", err),
+			err)
+	}
+	oid, ok := insertRes.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Can not convert to OID: error: %v", err),
+			err)
+	}
+	return &pb.CreateBlogResponse{
+		Blog: &pb.Blog{
+			Id:       oid.Hex(),
+			AuthorId: blog.GetAuthorId(),
+			Content:  blog.GetContent(),
+			Title:    blog.GetTitle(),
+		},
+	}, nil
+
 }
 
 func main() {
@@ -49,7 +85,7 @@ func main() {
 	opts := grpc.Creds(creds)
 
 	// Connect to MongoDB
-	mongoClient, mongoErr := mongo.NewClient(options.Client().ApplyURI("mongodb://mongoadmin:mymongopass123++@localhost:27017"))
+	mongoClient, mongoErr := mongo.NewClient(options.Client().ApplyURI("mongodb://mongoadmin:mymongopass123@localhost:27017"))
 	if mongoErr != nil {
 		log.Fatalf("Failed to create MongoDB client: %v\n", mongoErr)
 	}
